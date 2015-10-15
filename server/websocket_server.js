@@ -1,36 +1,24 @@
 // Helper funciton for clamping a value between a min and max
+fs = require('fs');
+path = require('path');
+
 function clamp(value, min, max) {
   return (value < min ? min : (value > max ? max : value));
 }
+
+var worldSVG = fs.readFileSync(path.resolve(__dirname, 'building.svg'), 'utf8');
 
 // Global variables
 var playerCount = 0,
     players = [],
     PORT = 8080;
 
+var axisList = [];
+
+
 var WebSocketServer = require('ws').Server,
-    wss = new WebSocketServer({port: PORT});
+    wss = new WebSocketServer({ port: PORT });
 
-function getBase64Image(img) {
-    var canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-
-    var ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
-
-    var dataURL = canvas.toDataUrl("image/svg");
-    return dataURL;
-}
-
-function sendImage() {
-    var img = getBase64Image(document.getElementById("building.svg"));
-    var JSONimg = {
-        'type': 'img',
-        'data': img,
-    }
-    ws.send(JSON.stringify(JSONimg));
-}
 
 wss.on('connection', function(ws) {
   
@@ -47,9 +35,9 @@ wss.on('connection', function(ws) {
     // Send the new player their ID
     ws.send(JSON.stringify({type: 'your-id', id: player.id}));
 	
-	// Send the new player the current World SVG
-	sendImage();
-    
+    // Log the stuff
+    ws.send(JSON.stringify({ type: 'img', data: worldSVG }));
+
     // Notify new player of existing players
     players.forEach( function(existingPlayer) {
       ws.send(JSON.stringify({
