@@ -6,19 +6,39 @@ function clamp(value, min, max) {
   return (value < min ? min : (value > max ? max : value));
 }
 
-var worldSVG = fs.readFileSync(path.resolve(__dirname, 'building.svg'), 'utf8');
+var buildingSVG = fs.readFileSync(path.resolve(__dirname, 'building.svg'), 'utf8');
 
 // Global variables
 var playerCount = 0,
     players = [],
     PORT = 8080;
 
-var axisList = [];
-
+var objectList = [
+    { item: "B1", boundPosition: "left", coordinate: 0 },
+    { item: "B1", boundPosition: "right", coordinate: 306 },
+    { item: "B2", boundPosition: "left", coordinate: 307 },
+    { item: "B2", boundPosition: "right", coordinate: 613 },
+    { item: "B3", boundPosition: "left", coordinate: 614 },
+    { item: "B3", boundPosition: "right", coordinate: 920 },
+    { item: "B4", boundPosition: "left", coordinate: 921 },
+    { item: "B4", boundPosition: "right", coordinate: 1227 },
+    { item: "B5", boundPosition: "left", coordinate: 1228 },
+    { item: "B5", boundPosition: "right", coordinate: 1534 }
+];
 
 var WebSocketServer = require('ws').Server,
     wss = new WebSocketServer({ port: PORT });
 
+var svgWidth = 2000;
+var svg;
+
+function compare(a,b){
+    if(a.coordinate < b.coordinate)
+        return -1;
+    if(a.coordinate > b.coordinate)
+        return 1;
+    return 0;
+}
 
 wss.on('connection', function(ws) {
   
@@ -36,9 +56,13 @@ wss.on('connection', function(ws) {
     ws.send(JSON.stringify({type: 'your-id', id: player.id}));
 	
     // Log the stuff
-    ws.send(JSON.stringify({ type: 'img', data: worldSVG }));
+    ws.send(JSON.stringify({
+        type: 'img',
+        data: buildingSVG,
+        svgWidth: svgWidth
+    }));
 
-    // Notify new player of existing players
+    // Notify new player of existing playesrpiz
     players.forEach( function(existingPlayer) {
       ws.send(JSON.stringify({
         type: 'player-joined',
@@ -106,6 +130,19 @@ wss.on('connection', function(ws) {
             }));
           });
           break;
+
+          case ('attack'):
+              // Grab the appropriate player
+              var tempObjectList = [
+                    { item: "player " + message.id, boundPosition: "left", coordinate: (message.x - 20) },
+                    { item: "player " + message.id, boundPosition: "right", coordinate: (message.x + 20) }].concat(objectList);
+              tempObjectList = tempObjectList.sort(compare);
+              for (var i = 1; i < tempObjectList.length-1; i+=2) {
+                  if ((tempObjectList[i].item != tempObjectList[i - 1].item) && (tempObjectList[i].item != tempObjectList[i + 1].item))
+                      console.log(tempObjectList[i].item + " was caught in an attack.");
+              }
+              
+              break;
       }    
     });
 });
