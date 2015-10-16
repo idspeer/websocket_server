@@ -53,16 +53,23 @@ window.onload = function() {
   // Players
   var myId,
     players = [];
-  
+
   // Set up the screen canvas
   var screen = document.createElement("canvas");
   screen.width = 640;
   screen.height = 640;
   screenCtx = screen.getContext("2d");
   document.getElementById("game-screen-container").appendChild(screen);
+
   var worldSVG;
   var worldSVGSrc;
   var source = new Image();
+
+  var xmlsLink = "http://www.w3.org/2000/svg";
+  var svgWidth = 2000;
+  var svgHeight = screen.height;
+  var svgOffsetX = 0;
+  var worldSVGView;
   
   // Set up the websocket client
   //ws = new WebSocket('ws://linux.cis.ksu.edu:' + PORT);
@@ -97,9 +104,10 @@ window.onload = function() {
 	  case('world'):
 		building = message.image;
 		break;
-      case ('img'):
-          worldSVG = message.data;
-          worldSVGSrc = 'data:image/svg+xml;base64,' + window.btoa(worldSVG);
+        case ('img'):
+            worldSVG = message.data;
+          worldSVGView = "<svg width=\"" + svgWidth + "\" height=\"" + svgHeight + "\" viewBox=\"" + svgOffsetX + " 0 " + (640 + svgOffsetX) + " " + svgHeight + "\" preserveAspectRatio=\"xMinYMin meet\" xmlns=\""+xmlsLink+"\">\n" + message.data + "\n</svg>"
+          worldSVGSrc = 'data:image/svg+xml;base64,' + window.btoa(worldSVGView);
           source.src = worldSVGSrc;
         break;
     }
@@ -111,25 +119,27 @@ window.onload = function() {
   // Event handler for key events
   window.onkeydown = function(event) {
     switch(event.keyCode) {
-      case 37: // left 
-        event.preventDefault();
-        ws.send(JSON.stringify({
-          type: "move", 
-          id: myId, 
-          x: -1, 
-          y: 0
+        case 37: // left 
+           // updateViewBox(-1);
+            event.preventDefault();
+            ws.send(JSON.stringify({
+              type: "move", 
+              id: myId, 
+              x: -1, 
+              y: 0
         }));
         break;
-      case 38: // up
-        event.preventDefault();
-        ws.send(JSON.stringify({
-          type: "move", 
-          id: myId, 
-          x: 0, 
-          y: -1
-        }));
-        break;
-      case 39: // right
+      //case 38: // up
+      //  event.preventDefault();
+      //  ws.send(JSON.stringify({
+      //    type: "move", 
+      //    id: myId, 
+      //    x: 0, 
+      //    y: -1
+      //  }));
+      //  break;
+        case 39: // right
+           // updateViewBox(1);
         event.preventDefault();
         ws.send(JSON.stringify({
           type: "move", 
@@ -138,21 +148,43 @@ window.onload = function() {
           y: 0
         }));
         break;
-      case 40: // down
-        event.preventDefault();
-        ws.send(JSON.stringify({
-          type: "move", 
-          id: myId, 
-          x: 0, 
-          y: 1
-        }));
-        break;
+      //case 40: // down
+      //  event.preventDefault();
+      //  ws.send(JSON.stringify({
+      //    type: "move", 
+      //    id: myId, 
+      //    x: 0, 
+      //    y: 1
+      //  }));
+      //  break;
     }
   }
+
+  screen.onclick = function(event) {
+      event.preventDefault();
+      ws.send(JSON.stringify({
+          type: "attack", 
+          id: myId, 
+          x: event.clientX, 
+          y: event.clientY
+      }));
+  }
   
+  function updateViewBox(xChange) {
+      if ((xChange > 0 && svgOffsetX < (1360)) || (xChange < 0 && svgOffsetX > 0)) {
+          svgOffsetX += xChange;
+          worldSVGView = "<svg width=\"" + svgWidth + "\" height=\"" + svgHeight + "\" viewBox=\"" + svgOffsetX + " 0 " + (640 + svgOffsetX) + " " + svgHeight + "\" preserveAspectRatio=\"none\">" + worldSVG + "</svg>"
+          worldSVGSrc = 'data:image/svg+xml;base64,' + window.btoa(worldSVGView);
+          source.src = worldSVGSrc;
+      }
+  }
+
   // Render 
   function render(ctx) {
       ctx.clearRect(0, 0, 640, 640);
+      ctx.fillStyle = "#d3d3d3";
+      ctx.fillRect(0, 406, 2000, 506);
+      ctx.fillStyle = "ffffff";
       ctx.drawImage(source, 0, 0);
     players.forEach( function(player) {
       ctx.fillStyle = player.color;
