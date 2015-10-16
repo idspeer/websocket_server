@@ -26,8 +26,8 @@ wss.on('connection', function(ws) {
   var player = {
        id: playerCount,
        x: Math.random() * 640,
-       y: Math.random() * 640,
-       size: 8,
+       y: 500,
+       size: 10,
        color: '#' + Math.floor(Math.random()*16777216).toString(16),
        ws: ws
     }
