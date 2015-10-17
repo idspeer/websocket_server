@@ -46,8 +46,8 @@ wss.on('connection', function(ws) {
   var player = {
        id: playerCount,
        x: Math.random() * 640,
-       y: 500,
-       size: 10,
+       y: 420,
+       size: 30,
        color: '#' + Math.floor(Math.random()*16777216).toString(16),
        ws: ws
     }
@@ -55,7 +55,7 @@ wss.on('connection', function(ws) {
     // Send the new player their ID
     ws.send(JSON.stringify({type: 'your-id', id: player.id}));
 	
-    // Log the stuff
+    //Send the SVG
     ws.send(JSON.stringify({
         type: 'img',
         data: buildingSVG,
@@ -140,8 +140,17 @@ wss.on('connection', function(ws) {
               for (var i = 1; i < tempObjectList.length-1; i+=2) {
                   if ((tempObjectList[i].item != tempObjectList[i - 1].item) && (tempObjectList[i].item != tempObjectList[i + 1].item))
                       console.log(tempObjectList[i].item + " was caught in an attack.");
-              }
-              
+                }
+                
+
+                buildingSVG += "<circle cx=\"" + message.x + "\" cy=\"" + message.y + "\" r=\"20\" fill=\"white\" />";
+                players.forEach(function (recipient) {
+                    recipient.ws.send(JSON.stringify({
+                        type: 'img',
+                        data: buildingSVG,
+                        svgWidth: svgWidth
+                    }));
+                });
               break;
       }    
     });

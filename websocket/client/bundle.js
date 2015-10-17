@@ -61,6 +61,7 @@ window.onload = function() {
   screenCtx = screen.getContext("2d");
   document.getElementById("game-screen-container").appendChild(screen);
 
+  var output = document.getElementById("output");
   var worldSVG;
   var worldSVGSrc;
   var source = new Image();
@@ -78,13 +79,14 @@ window.onload = function() {
   // Handler for websocket messages
   ws.onmessage = function(msg) {
     var message = JSON.parse(msg.data);
-    
     switch(message.type) {
       case('your-id'):
         myId = message.id;
+		output.value += "Your id is " + message.id + ".\n";
         break;
       case('player-joined'):
         // When a new player joins, add them to the player array
+		output.value += ("Player " + message.id + " joined.\n");
         players[message.id] = {
           x: message.x,
           y: message.y,
@@ -96,15 +98,18 @@ window.onload = function() {
         // When a player has moved, store their new position
         players[message.id].x = message.x;
         players[message.id].y = message.y;
+		//output.value += ("Player " + message.id + " has moved " + message.x "units,\n");
         break;
       case('player-left'):
         // When a player leaves, remove them from the player array
         players.splice(players.indexOf(players[message.id]));
+		output.value += ("Player " + message.id + " has left the game.\n");
         break;
 	  case('world'):
 		building = message.image;
 		break;
         case ('img'):
+		output.value += "An updated world SVG has been received. \n";
             worldSVG = message.data;
           worldSVGView = "<svg width=\"" + svgWidth + "\" height=\"" + svgHeight + "\" viewBox=\"" + svgOffsetX + " 0 " + (640 + svgOffsetX) + " " + svgHeight + "\" preserveAspectRatio=\"xMinYMin meet\" xmlns=\""+xmlsLink+"\">\n" + message.data + "\n</svg>"
           worldSVGSrc = 'data:image/svg+xml;base64,' + window.btoa(worldSVGView);
@@ -120,7 +125,7 @@ window.onload = function() {
   window.onkeydown = function(event) {
     switch(event.keyCode) {
         case 37: // left 
-           // updateViewBox(-1);
+           updateViewBox(-1);
             event.preventDefault();
             ws.send(JSON.stringify({
               type: "move", 
@@ -139,7 +144,7 @@ window.onload = function() {
       //  }));
       //  break;
         case 39: // right
-           // updateViewBox(1);
+          updateViewBox(1);
         event.preventDefault();
         ws.send(JSON.stringify({
           type: "move", 
@@ -165,15 +170,15 @@ window.onload = function() {
       ws.send(JSON.stringify({
           type: "attack", 
           id: myId, 
-          x: event.clientX, 
-          y: event.clientY
+          x: svgOffsetX + event.clientX - 8, 
+          y: event.clientY - 103
       }));
   }
   
   function updateViewBox(xChange) {
       if ((xChange > 0 && svgOffsetX < (1360)) || (xChange < 0 && svgOffsetX > 0)) {
           svgOffsetX += xChange;
-          worldSVGView = "<svg width=\"" + svgWidth + "\" height=\"" + svgHeight + "\" viewBox=\"" + svgOffsetX + " 0 " + (640 + svgOffsetX) + " " + svgHeight + "\" preserveAspectRatio=\"none\">" + worldSVG + "</svg>"
+          worldSVGView = "<svg width=\"" + svgWidth + "\" height=\"" + svgHeight + "\" viewBox=\"" + svgOffsetX + " 0 " + (640 + svgOffsetX) + " " + svgHeight + "\" preserveAspectRatio=\"xMinYMin meet\" xmlns=\""+xmlsLink+"\">\n" + worldSVG + "\n</svg>"
           worldSVGSrc = 'data:image/svg+xml;base64,' + window.btoa(worldSVGView);
           source.src = worldSVGSrc;
       }
@@ -189,7 +194,7 @@ window.onload = function() {
     players.forEach( function(player) {
       ctx.fillStyle = player.color;
       ctx.beginPath();
-      ctx.fillRect(player.x, player.y, player.size, player.size*1.27);
+      ctx.fillRect(player.x, player.y, player.size, player.size*2.13);
       ctx.fill();
     });
   }    
